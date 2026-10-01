@@ -10,13 +10,25 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { CommandContribution } from '@theia/core/lib/common/command';
+import { MenuContribution } from '@theia/core/lib/common/menu';
+import { About } from 'arduino-ide-extension/lib/browser/contributions/about';
+import { CheckForIDEUpdates } from 'arduino-ide-extension/lib/browser/contributions/check-for-ide-updates';
 import { bindMCPPreferences, MCPPreferences } from './mcp-preferences';
 import { MCPService, MCPServicePath } from '../common/mcp-service';
 import { MCPFrontendContribution } from './mcp-frontend-contribution';
+import { AgentAbout, DisabledIDEUpdateCheck, RemoveIDEUpdaterCommand } from './agent-branding';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-  // Bind MCP preferences to add settings to Arduino IDE preferences panel
+  // Bind MCP preferences to add settings to the IDE preferences panel
   bindMCPPreferences(bind);
+
+  // Arduino Agent identity: no Arduino IDE updater, fork-specific About dialog
+  rebind(CheckForIDEUpdates).to(DisabledIDEUpdateCheck).inSingletonScope();
+  rebind(About).to(AgentAbout).inSingletonScope();
+  bind(RemoveIDEUpdaterCommand).toSelf().inSingletonScope();
+  bind(CommandContribution).toService(RemoveIDEUpdaterCommand);
+  bind(MenuContribution).toService(RemoveIDEUpdaterCommand);
 
   // Bind the MCP service proxy to communicate with backend
   bind(MCPService).toDynamicValue(ctx => {

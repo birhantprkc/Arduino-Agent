@@ -50,7 +50,7 @@ export const mcpPreferenceSchema: PreferenceSchema = {
       type: 'boolean',
       description: nls.localize(
         'arduino/mcp/preferences.enabled',
-        'Enable MCP (Model Context Protocol) server integration. When enabled, AI assistants like Claude Code can interact with the Arduino IDE programmatically - compiling, uploading, managing libraries, and more.'
+        'Enable MCP (Model Context Protocol) server integration. When enabled, AI assistants like Claude Code can interact with Arduino Agent programmatically - compiling, uploading, managing libraries, and more.'
       ),
       default: MCPConfigurationDefaults['arduino.mcp.enabled'],
       order: 1,
@@ -59,7 +59,7 @@ export const mcpPreferenceSchema: PreferenceSchema = {
       type: 'boolean',
       description: nls.localize(
         'arduino/mcp/preferences.autoConnect',
-        'Automatically start the MCP server when Arduino IDE launches. Disable this if you want to manually control when the MCP server is available.'
+        'Automatically start the MCP server when Arduino Agent launches. Disable this if you want to manually control when the MCP server is available.'
       ),
       default: MCPConfigurationDefaults['arduino.mcp.autoConnect'],
       order: 2,

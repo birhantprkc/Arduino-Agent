@@ -159,12 +159,23 @@ jobs:
         # the `-c.extraMetadata.main=./...` argument is mis-tokenized and
         # electron-builder treats it as a config-file path (ENOENT). bash parses
         # it correctly - which is why the Linux/macOS jobs already pass.
+        #
+        # The version/appVersion/cliVersion/buildDate metadata mirrors upstream's
+        # scripts/package.js, but with Arduino Agent's version: it is the version
+        # in the window title and About dialog, and buildDate is what makes the
+        # app load its bundled VS Code plugins (arduino-ide-electron-main.js).
         shell: bash
-        run: >
-          node ../node_modules/electron-builder/cli.js --dir --publish never
-          -c.electronVersion=30.1.2
-          -c.extraMetadata.name=arduino-ide
-          -c.extraMetadata.main=./arduino-ide-electron-main.js
+        run: |
+          version=$(node -p "require('../arduino-mcp-extension/package.json').version")
+          cli_version=$(node -p "require('../arduino-ide-extension/package.json').arduino['arduino-cli'].version")
+          node ../node_modules/electron-builder/cli.js --dir --publish never \
+            -c.electronVersion=30.1.2 \
+            -c.extraMetadata.name=arduino-ide \
+            -c.extraMetadata.main=./arduino-ide-electron-main.js \
+            -c.extraMetadata.version="$version" \
+            -c.extraMetadata.theia.frontend.config.appVersion="$version" \
+            -c.extraMetadata.theia.frontend.config.cliVersion="$cli_version" \
+            -c.extraMetadata.theia.frontend.config.buildDate="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
       - name: Zip artifact (Windows)
         if: runner.os == 'Windows'
@@ -192,7 +203,8 @@ jobs:
           draft: true # publish manually after verifying the artifacts
           fail_on_unmatched_files: true
           body: |
-            Unsigned development build of the Arduino IDE with the embedded MCP server.
+            Unsigned build of Arduino Agent: the Arduino IDE with an embedded MCP server.
+            Not affiliated with or endorsed by Arduino SA.
 
             Each archive contains the unpacked application for its platform - unzip and run
             `Arduino IDE` (`Arduino IDE.exe` on Windows). The MCP server starts on
