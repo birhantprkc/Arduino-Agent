@@ -15,6 +15,8 @@
  *   4. A Streamable HTTP session can be initialized at /mcp
  *   5. tools/list returns the router meta-tools
  *   6. execute_tool(arduino_context) returns IDE state
+ *   7. prompts, 8. search_tools, 9-10. bridge parity with the server (online
+ *      instructions; offline tool list and discovery answers)
  */
 
 const http = require('http');
@@ -295,6 +297,38 @@ async function main() {
     fail(`bridge parity check failed to run: ${err.message}`);
   }
 
+  // 10. Offline parity: what the bridge answers with the IDE unreachable must
+  // match the live server (tool list; router discovery answers).
+  try {
+    const offline = await bridgeOffline([
+      { method: 'tools/list' },
+      { method: 'tools/call', params: { name: 'search_tools', arguments: { query: 'wait_for' } } },
+    ]);
+    const offlineNames = (offline[0].result?.tools ?? []).map((t) => t.name).join(', ');
+    const liveNames = tools.map((t) => t.name).join(', ');
+    if (offlineNames === liveNames) {
+      pass('bridge offline tools/list matches the server');
+    } else {
+      fail(`bridge offline tools/list drift: [${offlineNames}] vs server [${liveNames}]`);
+    }
+    if (isRouter) {
+      const liveSearch = await mcpRequest(token, sessionId, {
+        jsonrpc: '2.0',
+        id: 7,
+        method: 'tools/call',
+        params: { name: 'search_tools', arguments: { query: 'wait_for' } },
+      });
+      const liveText = parsePayload(liveSearch).result?.content?.[0]?.text;
+      if (offline[1].result?.content?.[0]?.text === liveText) {
+        pass('bridge offline search_tools matches the server');
+      } else {
+        fail('bridge offline search_tools differs from the server (rebuild lib, or the IDE is older than this checkout)');
+      }
+    }
+  } catch (err) {
+    fail(`bridge offline parity check failed to run: ${err.message}`);
+  }
+
   console.log();
   if (failures) {
     fail(`${failures} check(s) failed`);
@@ -347,6 +381,51 @@ function bridgeInitializeInstructions() {
         },
       }) + '\n'
     );
+  });
+}
+
+/**
+ * Runs the bridge against an unreachable endpoint (as if the IDE were closed)
+ * and returns its responses to `requests`, in order.
+ */
+function bridgeOffline(requests) {
+  const { spawn } = require('child_process');
+  const bridgePath = path.join(__dirname, '..', '..', 'bridge', 'arduino-agent-bridge.js');
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [bridgePath], {
+      stdio: ['pipe', 'pipe', 'ignore'],
+      env: { ...process.env, ARDUINO_MCP_URL: 'http://127.0.0.1:1/mcp', ARDUINO_AGENT_PATH: '' },
+    });
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(new Error('bridge did not answer within 10s'));
+    }, 10000);
+    const responses = new Map();
+    let buffer = '';
+    child.stdout.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => {
+      buffer += chunk;
+      let nl;
+      while ((nl = buffer.indexOf('\n')) !== -1) {
+        const msg = JSON.parse(buffer.slice(0, nl));
+        buffer = buffer.slice(nl + 1);
+        if (typeof msg.id === 'number' && msg.id > 0) responses.set(msg.id, msg);
+      }
+      if (responses.size === requests.length) {
+        clearTimeout(timer);
+        child.kill();
+        resolve(requests.map((_, i) => responses.get(i + 1)));
+      }
+    });
+    child.on('error', (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+    const lines = [
+      { jsonrpc: '2.0', id: 0, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'smoke-test', version: '1.0.0' } } },
+      ...requests.map((r, i) => ({ jsonrpc: '2.0', id: i + 1, ...r })),
+    ];
+    child.stdin.write(lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
   });
 }
 

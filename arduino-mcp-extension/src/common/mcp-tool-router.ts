@@ -252,6 +252,78 @@ function calculateRelevance(tool: ToolDefinition, query: string): number {
 }
 
 /**
+ * The read-only router tools. They only describe the catalog, so the stdio
+ * bridge can answer them while the IDE is closed.
+ */
+export const ROUTER_DISCOVERY_TOOLS = [
+  'list_tool_categories',
+  'get_category_tools',
+  'search_tools',
+];
+
+/**
+ * Result of a router discovery tool (see ROUTER_DISCOVERY_TOOLS). Shared by the
+ * MCP server and the offline bridge so both answer identically.
+ * Throws on missing/unknown arguments, like any tool handler.
+ */
+export function runRouterDiscoveryTool(
+  name: string,
+  args: Record<string, unknown> | undefined
+): unknown {
+  switch (name) {
+    case 'list_tool_categories':
+      return {
+        categories: listToolCategories(),
+        hint: 'Use get_category_tools with a category name to see detailed tool info',
+      };
+
+    case 'get_category_tools': {
+      const category = args?.category as string;
+      if (!category) {
+        throw new Error('category is required');
+      }
+      const tools = getCategoryTools(category);
+      if (!tools) {
+        throw new Error(
+          `Unknown category: ${category}. Use list_tool_categories to see available categories.`
+        );
+      }
+      return {
+        category,
+        tools: tools.map((t) => ({
+          name: t.name,
+          description: t.description,
+          parameters: t.inputSchema.properties,
+          required: t.inputSchema.required || [],
+          annotations: t.annotations,
+        })),
+        hint: 'Use execute_tool with tool_name and params to execute a tool',
+      };
+    }
+
+    case 'search_tools': {
+      const query = args?.query as string;
+      if (!query) {
+        throw new Error('query is required');
+      }
+      const searchResults = searchTools(query);
+      return {
+        query,
+        results: searchResults,
+        count: searchResults.length,
+        hint:
+          searchResults.length > 0
+            ? 'Use get_category_tools to see full tool details, or execute_tool to run a tool'
+            : 'No tools found. Try a different search term.',
+      };
+    }
+
+    default:
+      throw new Error(`Not a router discovery tool: ${name}`);
+  }
+}
+
+/**
  * Get a tool definition by name (for execute_tool validation)
  */
 export function getToolByName(name: string): ToolDefinition | undefined {
