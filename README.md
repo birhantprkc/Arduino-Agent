@@ -85,15 +85,20 @@ older builds are on the
    >   "mcpServers": {
    >     "arduino": {
    >       "command": "node",
-   >       "args": ["/path/to/arduino-mcp-extension/bridge/arduino-agent-bridge.js"]
+   >       "args": ["<install>/resources/mcp-bridge/bridge/arduino-agent-bridge.js"]
    >     }
    >   }
    > }
    > ```
    >
-   > It needs no token configuration (it reads `~/.arduinoIDE/mcp-token` itself)
-   > and no dependencies. See [the bridge README](arduino-mcp-extension/bridge/README.md)
-   > for auto-launch and other options.
+   > Releases after v0.6.1 ship the bridge inside the app: `<install>` is the
+   > unzipped folder on Windows/Linux; on macOS the path is
+   > `Arduino IDE.app/Contents/Resources/mcp-bridge/bridge/arduino-agent-bridge.js`.
+   > From a source checkout, use `arduino-mcp-extension/bridge/arduino-agent-bridge.js`
+   > after building the extension. It needs no token configuration (it reads
+   > `~/.arduinoIDE/mcp-token` itself) and no dependencies. See
+   > [the bridge README](arduino-mcp-extension/bridge/README.md) for auto-launch
+   > and other options.
 
    > **Claude Code users:** the server sends workflow guidance automatically,
    > and ships three slash commands (`/bringup`, `/debug-serial`,
