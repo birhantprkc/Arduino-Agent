@@ -70,7 +70,7 @@ export class MCPFrontendContribution
           break;
         case 'arduino.mcp.requireAuth':
           this.messageService.info(
-            'The MCP authentication setting takes effect after restarting the Arduino IDE.',
+            'The MCP authentication setting takes effect after restarting Arduino Agent.',
             { timeout: 8000 }
           );
           break;

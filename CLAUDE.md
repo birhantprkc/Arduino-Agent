@@ -5,6 +5,11 @@ Fork of Arduino IDE 2.x (Theia/Electron) with an embedded MCP server.
 arduino/arduino-ide by targeted file copies — this repo shares no git history
 with upstream); `arduino-mcp-extension/` is ours; `electron-app/` packages both.
 
+Fork identity (About dialog, Arduino's IDE updater switched off) is overridden
+from `arduino-mcp-extension/src/browser/agent-branding.ts` via rebinds, not by
+editing vendored files. `arduino-ide-extension` emits no `.d.ts`, so its
+classes are `any` in our extension: no `override`, no inherited fields.
+
 ## Build
 
 - Yarn 4 via corepack (`corepack enable`). Node 18+ works (engines say <21 but

@@ -680,7 +680,7 @@ export class ArduinoMCPServer {
       res.end(
         JSON.stringify({
           error:
-            'Unauthorized. Pass the MCP token as an "Authorization: Bearer <token>" header. The token is shown in the Arduino IDE (Preferences > MCP) and stored in ~/.arduinoIDE/mcp-token.',
+            'Unauthorized. Pass the MCP token as an "Authorization: Bearer <token>" header. The token is shown in Arduino Agent (Preferences > MCP) and stored in ~/.arduinoIDE/mcp-token.',
         })
       );
       return;

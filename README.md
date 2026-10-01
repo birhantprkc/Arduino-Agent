@@ -43,9 +43,16 @@ Unsigned development builds of the **[latest release](https://github.com/mixelpi
 - [**macOS**](https://github.com/mixelpixx/Arduino-Agent/releases/latest/download/arduino-ide-mcp-macos.zip)
 - [**Linux x64**](https://github.com/mixelpixx/Arduino-Agent/releases/latest/download/arduino-ide-mcp-linux.zip)
 
-Unzip and run `Arduino IDE` (`Arduino IDE.exe` on Windows). Release notes and
-older builds are on the
+Unzip and run `Arduino IDE` (`Arduino IDE.exe` on Windows). The window, About
+box and icon say **Arduino Agent**; only the executable keeps upstream's name for
+now. Arduino Agent doesn't check Arduino's update server; get new versions here.
+Release notes and older builds are on the
 [Releases](https://github.com/mixelpixx/Arduino-Agent/releases) page.
+
+> **Have the official Arduino IDE installed too?** Both currently share settings
+> and a single-instance lock, so starting one while the other is running hands
+> off to the one already open. Close one before starting the other. Separating
+> them properly is planned for v0.7.0.
 
 > These are unsigned dev builds. On macOS you may need to allow the app under
 > **System Settings → Privacy & Security**; on Windows, dismiss SmartScreen with

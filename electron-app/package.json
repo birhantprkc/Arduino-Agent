@@ -60,7 +60,7 @@
     "target": "electron",
     "frontend": {
       "config": {
-        "applicationName": "Arduino IDE",
+        "applicationName": "Arduino Agent",
         "defaultTheme": {
           "light": "arduino-theme",
           "dark": "arduino-theme-dark"
@@ -103,8 +103,8 @@
       }
     }
   },
-  "author": "Arduino SA",
-  "description": "Arduino IDE",
+  "author": "mixelpixx",
+  "description": "Arduino Agent: the Arduino IDE with a built-in MCP server",
   "build": {
     "appId": "cc.arduino.IDE2",
     "productName": "Arduino IDE",
