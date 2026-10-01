@@ -132,6 +132,23 @@
       {
         "from": "plugins",
         "to": "app/plugins"
+      },
+      {
+        "from": "../arduino-mcp-extension/bridge",
+        "to": "mcp-bridge/bridge",
+        "filter": [
+          "arduino-agent-bridge.js"
+        ]
+      },
+      {
+        "from": "../arduino-mcp-extension/lib/common",
+        "to": "mcp-bridge/lib/common",
+        "filter": [
+          "mcp-instructions.js",
+          "mcp-prompts.js",
+          "mcp-tool-router.js",
+          "mcp-tools.js"
+        ]
       }
     ],
     "win": {

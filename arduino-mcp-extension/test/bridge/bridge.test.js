@@ -310,3 +310,30 @@ test('a rejected token gives a readable tool error, and tools/list still answers
     await ide.close();
   }
 });
+
+test('release packaging ships the bridge with every compiled module it loads', needsLib, () => {
+  // The bridge loads ../lib/common/<name> at runtime; electron-builder's
+  // extraResources must copy each of those (and what they require) next to it.
+  const loaded = [...fs.readFileSync(BRIDGE, 'utf8').matchAll(/loadCompiled\('([\w-]+)'\)/g)].map((m) => m[1]);
+  assert.ok(loaded.length > 0);
+  const needed = new Set();
+  const visit = (name) => {
+    if (needed.has(name)) return;
+    needed.add(name);
+    const src = fs.readFileSync(path.join(LIB, `${name}.js`), 'utf8');
+    for (const m of src.matchAll(/require\("\.\/([\w-]+)"\)/g)) visit(m[1]);
+  };
+  loaded.forEach(visit);
+
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'electron-app', 'package.json'), 'utf8'));
+  const resources = pkg.build.extraResources;
+  const bridgeEntry = resources.find((r) => r.from === '../arduino-mcp-extension/bridge');
+  const libEntry = resources.find((r) => r.from === '../arduino-mcp-extension/lib/common');
+  assert.ok(bridgeEntry && libEntry, 'electron-app extraResources must copy bridge/ and lib/common/');
+  assert.ok(bridgeEntry.filter.includes(path.basename(BRIDGE)));
+  for (const name of needed) {
+    assert.ok(libEntry.filter.includes(`${name}.js`), `extraResources is missing lib/common/${name}.js`);
+  }
+  // Same relative layout as the checkout, so the bridge's ../lib/common still resolves.
+  assert.strictEqual(path.posix.dirname(bridgeEntry.to), path.posix.dirname(path.posix.dirname(libEntry.to)));
+});

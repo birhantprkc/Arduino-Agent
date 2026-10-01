@@ -29,18 +29,28 @@ is closed:
   "mcpServers": {
     "arduino": {
       "command": "node",
-      "args": ["/path/to/arduino-mcp-extension/bridge/arduino-agent-bridge.js"],
+      "args": ["/path/to/mcp-bridge/bridge/arduino-agent-bridge.js"],
       "env": { "ARDUINO_AGENT_PATH": "/path/to/Arduino IDE executable" }
     }
   }
 }
 ```
 
+Where to find it:
+
+| Running from | Bridge path |
+|--------------|-------------|
+| Release, Windows / Linux | `<unzipped folder>/resources/mcp-bridge/bridge/arduino-agent-bridge.js` |
+| Release, macOS | `Arduino IDE.app/Contents/Resources/mcp-bridge/bridge/arduino-agent-bridge.js` |
+| Source checkout | `arduino-mcp-extension/bridge/arduino-agent-bridge.js`, after `yarn build` in `arduino-mcp-extension` |
+
+Releases after v0.6.1 include the bridge; earlier zips don't, so use a checkout
+with those. Either way the bridge sits next to the compiled extension modules it
+loads (`../lib/common/`), which supply the offline tool list and answers.
+
 No dependencies (node builtins only) and no token setup — it reads
 `~/.arduinoIDE/mcp-token` itself, re-reading per request so it survives the IDE
-regenerating the token on restart. Run it from a **built** checkout or install
-(`yarn build` in `arduino-mcp-extension`): the offline tool list and answers
-come from the compiled extension in `lib/`.
+regenerating the token on restart.
 
 ## Options
 
@@ -62,7 +72,7 @@ Example on Windows:
   "mcpServers": {
     "arduino": {
       "command": "node",
-      "args": ["C:/path/to/bridge/arduino-agent-bridge.js"],
+      "args": ["C:/Arduino/resources/mcp-bridge/bridge/arduino-agent-bridge.js"],
       "env": { "ARDUINO_AGENT_PATH": "C:/Arduino/Arduino IDE.exe" }
     }
   }
