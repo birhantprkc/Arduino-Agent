@@ -56,9 +56,7 @@ import {
 } from '../common/mcp-service';
 import {
   ROUTER_TOOLS,
-  listToolCategories,
-  getCategoryTools,
-  searchTools,
+  runRouterDiscoveryTool,
   toolExists,
 } from '../common/mcp-tool-router';
 import {
@@ -860,36 +858,11 @@ export class ArduinoMCPServer {
         if (this.useRouterMode) {
           switch (name) {
             case 'list_tool_categories':
-              result = {
-                categories: listToolCategories(),
-                hint: 'Use get_category_tools with a category name to see detailed tool info',
-              };
+            case 'get_category_tools':
+            case 'search_tools':
+              // Shared with the offline bridge (answers these with the IDE closed).
+              result = runRouterDiscoveryTool(name, args);
               break;
-
-            case 'get_category_tools': {
-              const category = args?.category as string;
-              if (!category) {
-                throw new Error('category is required');
-              }
-              const tools = getCategoryTools(category);
-              if (!tools) {
-                throw new Error(
-                  `Unknown category: ${category}. Use list_tool_categories to see available categories.`
-                );
-              }
-              result = {
-                category,
-                tools: tools.map((t) => ({
-                  name: t.name,
-                  description: t.description,
-                  parameters: t.inputSchema.properties,
-                  required: t.inputSchema.required || [],
-                  annotations: t.annotations,
-                })),
-                hint: 'Use execute_tool with tool_name and params to execute a tool',
-              };
-              break;
-            }
 
             case 'execute_tool': {
               const toolName = args?.tool_name as string;
@@ -903,24 +876,6 @@ export class ArduinoMCPServer {
                 );
               }
               result = await this.executeArduinoTool(toolName, params);
-              break;
-            }
-
-            case 'search_tools': {
-              const query = args?.query as string;
-              if (!query) {
-                throw new Error('query is required');
-              }
-              const searchResults = searchTools(query);
-              result = {
-                query,
-                results: searchResults,
-                count: searchResults.length,
-                hint:
-                  searchResults.length > 0
-                    ? 'Use get_category_tools to see full tool details, or execute_tool to run a tool'
-                    : 'No tools found. Try a different search term.',
-              };
               break;
             }
 

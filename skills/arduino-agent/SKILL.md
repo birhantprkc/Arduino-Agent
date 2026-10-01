@@ -17,8 +17,9 @@ skill adds the judgment that comes from real hardware sessions.
 If the MCP config points at `http://127.0.0.1:3847/mcp` directly, the whole
 server shows "failed to connect" whenever the IDE is closed. Prefer the stdio
 bridge (`arduino-mcp-extension/bridge/arduino-agent-bridge.js` in the repo or
-install): it always connects, returns "launch the IDE" as a normal tool error,
-and recovers without a client restart.
+install): it always connects with the full tool list, starts the IDE when a tool
+needs it (with `ARDUINO_AGENT_PATH` set; otherwise it returns "open the IDE" as
+a normal tool error), and recovers without a client restart.
 
 ## Identifying boards: the decision tree
 
