@@ -50,6 +50,7 @@ import { MCP_SERVER_INSTRUCTIONS } from '../common/mcp-instructions';
 import { MCP_PROMPTS, findPrompt } from '../common/mcp-prompts';
 import { Task } from '../common/mcp-types';
 import {
+  ACTIVE_CLIENT_WINDOW_MS,
   MCPStatus,
   MCPFileChangeEvent,
   MCPIDEState,
@@ -391,6 +392,12 @@ export class ArduinoMCPServer {
     string,
     StreamableHTTPServerTransport
   >();
+  // Last request time per session, for MCPStatus.activeClients
+  private readonly sessionLastSeen = new Map<string, number>();
+  // Notified when a session opens or closes (the IDE's status bar)
+  private sessionsChangedListener: (() => void) | null = null;
+  // Why the last start() failed, shown in the IDE until a start succeeds
+  private startError: string | null = null;
 
   // Task management for async operations
   private readonly tasks = new Map<string, Task>();
@@ -446,10 +453,14 @@ export class ArduinoMCPServer {
       port: this.port,
       connectedClients:
         this.sseTransports.size + this.streamableTransports.size,
+      activeClients: [...this.sessionLastSeen.values()].filter(
+        (seen) => Date.now() - seen < ACTIVE_CLIENT_WINDOW_MS
+      ).length,
       uptime: this.isRunning
         ? Math.floor((Date.now() - this.startTime) / 1000)
         : 0,
       authRequired: this.requireAuth,
+      error: this.isRunning ? undefined : this.startError ?? undefined,
     };
   }
 
@@ -480,12 +491,18 @@ export class ArduinoMCPServer {
           mcpLog.error(
             `Port ${this.port} is in use. Change the arduino.mcp.port preference or set the ARDUINO_MCP_PORT env var.`
           );
+          this.startError =
+            `Port ${this.port} is already in use, probably by another running copy of Arduino Agent. ` +
+            'Close it, or choose another port in Preferences > MCP.';
+        } else {
+          this.startError = `The MCP server could not start: ${err.message}`;
         }
         reject(err);
       });
 
       this.httpServer!.listen(this.port, '127.0.0.1', () => {
         this.isRunning = true;
+        this.startError = null;
         this.startTime = Date.now();
         mcpLog.info(
           `MCP Server listening on http://127.0.0.1:${this.port} (auth: ${
@@ -507,6 +524,7 @@ export class ArduinoMCPServer {
       await transport.close().catch(() => undefined);
     }
     this.streamableTransports.clear();
+    this.sessionLastSeen.clear();
     await this.serialManager?.disconnect().catch(() => undefined);
 
     return new Promise((resolve) => {
@@ -556,6 +574,27 @@ export class ArduinoMCPServer {
     callback: ((event: MCPFileChangeEvent) => void) | null
   ): void {
     this.fileChangeCallback = callback;
+  }
+
+  setSessionsChangedListener(listener: (() => void) | null): void {
+    this.sessionsChangedListener = listener;
+  }
+
+  private touchSession(sessionId: string | undefined): void {
+    if (sessionId) {
+      this.sessionLastSeen.set(sessionId, Date.now());
+    }
+  }
+
+  private sessionOpened(sessionId: string): void {
+    this.touchSession(sessionId);
+    this.sessionsChangedListener?.();
+  }
+
+  private sessionClosed(sessionId: string | undefined): void {
+    if (sessionId && this.sessionLastSeen.delete(sessionId)) {
+      this.sessionsChangedListener?.();
+    }
   }
 
   /**
@@ -727,11 +766,13 @@ export class ArduinoMCPServer {
         onsessioninitialized: (sid: string) => {
           this.streamableTransports.set(sid, newTransport);
           mcpLog.info(`Streamable HTTP session initialized: ${sid}`);
+          this.sessionOpened(sid);
         },
       });
       newTransport.onclose = () => {
         if (newTransport.sessionId) {
           this.streamableTransports.delete(newTransport.sessionId);
+          this.sessionClosed(newTransport.sessionId);
         }
       };
       const server = this.createMCPServerInstance();
@@ -739,6 +780,7 @@ export class ArduinoMCPServer {
       transport = newTransport;
     }
 
+    this.touchSession(sessionId);
     await transport.handleRequest(req, res);
   }
 
@@ -751,10 +793,12 @@ export class ArduinoMCPServer {
     await server.connect(transport);
     this.sseTransports.set(transport.sessionId, transport);
     mcpLog.info(`SSE session established: ${transport.sessionId}`);
+    this.sessionOpened(transport.sessionId);
 
     req.on('close', () => {
       mcpLog.info(`SSE session closed: ${transport.sessionId}`);
       this.sseTransports.delete(transport.sessionId);
+      this.sessionClosed(transport.sessionId);
     });
   }
 
@@ -774,6 +818,7 @@ export class ArduinoMCPServer {
       res.end(JSON.stringify({ error: 'No active SSE session for this id' }));
       return;
     }
+    this.touchSession(transport.sessionId);
 
     const chunks: Buffer[] = [];
     req.on('data', (chunk) => chunks.push(chunk));

@@ -538,7 +538,7 @@ export class SettingsComponent extends React.Component<
           <p style={{ marginTop: 0, marginBottom: '16px', opacity: 0.8, fontSize: '12px' }}>
             {nls.localize(
               'arduino/preferences/mcp.description',
-              'MCP enables AI assistants like Claude Code to interact with the Arduino IDE - compiling sketches, uploading code, managing libraries, and more.'
+              'MCP enables AI assistants like Claude Code to work in Arduino Agent with you - compiling sketches, uploading code, managing libraries, and more.'
             )}
           </p>
         </div>
@@ -618,12 +618,16 @@ export class SettingsComponent extends React.Component<
         </div>
 
         <div style={{ marginTop: '16px', padding: '12px', background: 'var(--theia-editor-background)', borderRadius: '4px' }}>
+          {/* Arduino Agent: the streamable HTTP endpoint (SSE is legacy) and the setup dialog */}
           <div style={{ fontSize: '12px', opacity: 0.8 }}>
-            {nls.localize('arduino/preferences/mcp.connectionInfo', 'To connect Claude Code, add to your MCP configuration:')}
+            {nls.localize('arduino/preferences/mcp.serverAddress', 'MCP server address:')}
           </div>
           <code style={{ display: 'block', marginTop: '8px', fontSize: '11px', wordBreak: 'break-all' }}>
-            http://127.0.0.1:{this.state.mcpPort}/sse
+            http://127.0.0.1:{this.state.mcpPort}/mcp
           </code>
+          <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '8px' }}>
+            {nls.localize('arduino/preferences/mcp.connectHint', 'For ready-to-paste setups for Claude Code, Claude Desktop and other clients, use Help > Connect an AI Agent...')}
+          </div>
         </div>
       </div>
     );
