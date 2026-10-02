@@ -105,8 +105,12 @@ export class ConnectAgentContribution
       tooltip = 'The MCP server is off (Preferences > MCP). Click for connection setup.';
     } else if (status.activeClients > 0) {
       const n = status.activeClients;
-      text = n === 1 ? '$(hubot) Agent connected' : `$(hubot) ${n} agents connected`;
-      tooltip = `${n} MCP session${n === 1 ? '' : 's'} active in the last 5 minutes on ${url}. Click for connection setup.`;
+      // "Active", not "connected": this counts clients that made a request in the
+      // last 5 minutes (each Claude session's bridge counts once it fetches tools).
+      text = n === 1 ? '$(hubot) Agent active' : `$(hubot) ${n} agents active`;
+      tooltip =
+        `${n} MCP client${n === 1 ? '' : 's'} used Arduino Agent in the last 5 minutes ` +
+        `(each AI session with Arduino Agent configured counts once) on ${url}. Click for connection setup.`;
     } else {
       text = '$(hubot) MCP ready';
       tooltip = `MCP server listening on ${url}. Click to connect an AI agent.`;
@@ -171,7 +175,9 @@ class ConnectAgentDialog extends AbstractDialog<void> {
       document.createTextNode(
         status.running
           ? `MCP server running on ${url}` +
-              (status.activeClients ? ` - ${status.activeClients} active session(s)` : '')
+              (status.activeClients
+                ? ` - ${status.activeClients} client${status.activeClients === 1 ? '' : 's'} active in the last 5 minutes`
+                : '')
           : status.error ??
               'The MCP server is off. Turn it on in Preferences > MCP, then come back here.'
       )
