@@ -67,12 +67,47 @@ page.
 
 ## Quick start — connect your agent
 
-1. **Launch the IDE.** The MCP server starts automatically on
-   `http://127.0.0.1:3847` and prints a ready-to-paste client configuration —
-   including your auth token — to the console.
+1. **Launch Arduino Agent.** The MCP server starts automatically on
+   `http://127.0.0.1:3847`. The status bar (bottom left) shows **MCP ready**,
+   and **Agent active** once an assistant is using it.
 
-2. **Add it to your MCP client.** For Claude Code / Claude Desktop, drop this
-   into your `.mcp.json` (the token lives in `~/.arduinoIDE/mcp-token`):
+2. **Help › Connect an AI Agent…** (or click that status bar item). It gives
+   you copy-ready setups with your installation's real paths already filled in:
+   - **Claude Code**: one `claude mcp add` command to paste into a terminal.
+   - **Claude Desktop, Cursor and other MCP clients**: an `mcpServers` entry
+     for the client's config file.
+   - **Direct HTTP**: for clients that speak Streamable HTTP, with your token.
+
+   The first two go through the bundled stdio bridge, so the client stays
+   connected while Arduino Agent is closed and starts it when a tool needs it
+   (needs Node.js 18 or newer).
+
+   <details>
+   <summary>Prefer to write the config yourself?</summary>
+
+   Via the bridge (recommended), on Windows:
+
+   ```json
+   {
+     "mcpServers": {
+       "arduino": {
+         "command": "node",
+         "args": ["C:/path/to/Arduino Agent/resources/mcp-bridge/bridge/arduino-agent-bridge.js"],
+         "env": { "ARDUINO_AGENT_PATH": "C:/path/to/Arduino Agent/Arduino Agent.exe" }
+       }
+     }
+   }
+   ```
+
+   On macOS the bridge is at
+   `Arduino Agent.app/Contents/Resources/mcp-bridge/bridge/arduino-agent-bridge.js`;
+   on Linux, under `resources/` in the unzipped folder. From a source checkout,
+   use `arduino-mcp-extension/bridge/arduino-agent-bridge.js` after building the
+   extension. The bridge reads the token from `~/.arduinoIDE/mcp-token` itself
+   and has no dependencies; see [the bridge README](arduino-mcp-extension/bridge/README.md)
+   for its options.
+
+   Direct HTTP (only connects while Arduino Agent is running):
 
    ```json
    {
@@ -80,39 +115,13 @@ page.
        "arduino": {
          "type": "http",
          "url": "http://127.0.0.1:3847/mcp",
-         "headers": { "Authorization": "Bearer <your-token>" }
+         "headers": { "Authorization": "Bearer <token from ~/.arduinoIDE/mcp-token>" }
        }
      }
    }
    ```
 
-   > **Tip — avoid "server failed to connect" when the IDE is closed.** The MCP
-   > server lives *inside* the IDE, so a direct HTTP connection fails whenever
-   > the IDE isn't running. Use the bundled stdio bridge instead: the server
-   > always connects with its full tool list, and with `ARDUINO_AGENT_PATH` set
-   > a tool that needs the IDE starts it and waits for it — it recovers by
-   > itself when the IDE starts or restarts:
-   >
-   > ```json
-   > {
-   >   "mcpServers": {
-   >     "arduino": {
-   >       "command": "node",
-   >       "args": ["<install>/resources/mcp-bridge/bridge/arduino-agent-bridge.js"]
-   >     }
-   >   }
-   > }
-   > ```
-   >
-   > Releases after v0.6.1 ship the bridge inside the app: `<install>` is the
-   > unzipped folder on Windows/Linux; on macOS the path is
-   > `Arduino Agent.app/Contents/Resources/mcp-bridge/bridge/arduino-agent-bridge.js`
-   > (`Arduino IDE.app` in 0.6.2).
-   > From a source checkout, use `arduino-mcp-extension/bridge/arduino-agent-bridge.js`
-   > after building the extension. It needs no token configuration (it reads
-   > `~/.arduinoIDE/mcp-token` itself) and no dependencies. See
-   > [the bridge README](arduino-mcp-extension/bridge/README.md) for auto-launch
-   > and other options.
+   </details>
 
    > **Claude Code users:** the server sends workflow guidance automatically,
    > and ships three slash commands (`/bringup`, `/debug-serial`,
