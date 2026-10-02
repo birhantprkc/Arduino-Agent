@@ -7,7 +7,10 @@ with upstream); `arduino-mcp-extension/` is ours; `electron-app/` packages both.
 
 Fork identity (About dialog, Arduino's IDE updater switched off) is overridden
 from `arduino-mcp-extension/src/browser/agent-branding.ts` via rebinds, not by
-editing vendored files. `arduino-ide-extension` emits no `.d.ts`, so its
+editing vendored files. Colors likewise: `agent-theme.ts` registers Arduino's
+theme JSONs (still under Arduino's theme ids) after `agent-palette.ts` moves
+their teal to indigo, so syncing new upstream theme JSONs needs no manual
+recoloring; check `yarn test:palette` still passes. `arduino-ide-extension` emits no `.d.ts`, so its
 classes are `any` in our extension: no `override`, no inherited fields.
 
 ## Build
