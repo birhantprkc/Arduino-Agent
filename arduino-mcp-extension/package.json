@@ -35,6 +35,7 @@
     "clean": "rimraf lib",
     "build": "tsc",
     "test:bridge": "node --test test/bridge/bridge.test.js",
+    "test:palette": "node --test test/theme/agent-palette.test.js",
     "build:dev": "yarn build",
     "watch": "tsc -w"
   }
