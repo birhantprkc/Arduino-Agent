@@ -18,9 +18,39 @@ export interface MCPStatus {
   enabled: boolean;
   running: boolean;
   port: number;
+  /** Open sessions. Streamable HTTP clients rarely close theirs, so this only grows. */
   connectedClients: number;
+  /** Sessions that made a request within the last ACTIVE_CLIENT_WINDOW_MS. */
+  activeClients: number;
   uptime: number; // seconds
   authRequired: boolean;
+  /** Why the server is not running although it should be (e.g. its port is taken). */
+  error?: string;
+}
+
+/** How recently a session must have made a request to count as active. */
+export const ACTIVE_CLIENT_WINDOW_MS = 5 * 60 * 1000;
+
+/** One ready-to-paste way of connecting a client. */
+export interface MCPConnectionSnippet {
+  id: 'claude-code' | 'bridge-config' | 'http-config';
+  title: string;
+  description: string;
+  text: string;
+}
+
+/**
+ * Everything needed to connect an MCP client to this installation: the
+ * snippets use the real paths of the bundled bridge and of the app itself.
+ */
+export interface MCPConnectionGuide {
+  status: MCPStatus;
+  url: string;
+  /** The bundled stdio bridge, or null if this build has none. */
+  bridgePath: string | null;
+  /** The app executable to use as ARDUINO_AGENT_PATH, or null in dev builds. */
+  appExecutable: string | null;
+  snippets: MCPConnectionSnippet[];
 }
 
 /**
@@ -103,6 +133,12 @@ export interface MCPService {
    * (includes the auth token when authentication is enabled).
    */
   getClientConfig(): Promise<string>;
+
+  /**
+   * Connection setups for Claude Code, config-file clients (via the bundled
+   * bridge) and direct HTTP, with this installation's paths filled in.
+   */
+  getConnectionGuide(): Promise<MCPConnectionGuide>;
 
   /**
    * Check if MCP server is healthy and accepting connections

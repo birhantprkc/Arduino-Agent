@@ -7,6 +7,8 @@
  * sketch, board/port selection) pushed from the frontend.
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
   MCPService,
@@ -14,10 +16,40 @@ import {
   MCPServiceClient,
   MCPFileChangeEvent,
   MCPIDEState,
+  MCPConnectionGuide,
+  MCPConnectionSnippet,
   ToolMode,
 } from '../common/mcp-service';
 import { ArduinoMCPServer } from './mcp-server';
 import { mcpLog } from './mcp-logger';
+
+const BRIDGE_IN_RESOURCES = path.join('mcp-bridge', 'bridge', 'arduino-agent-bridge.js');
+
+/**
+ * The stdio bridge shipped with this build: `resources/mcp-bridge/` in a
+ * release (see electron-app's extraResources), or the extension's own
+ * `bridge/` in a source checkout.
+ */
+function findBridge(): string | null {
+  const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
+  const candidates = [
+    resourcesPath && path.join(resourcesPath, BRIDGE_IN_RESOURCES),
+    // Bundled backend: resources/app/lib/backend -> resources
+    path.resolve(__dirname, '..', '..', '..', BRIDGE_IN_RESOURCES),
+    // Unbundled: arduino-mcp-extension/lib/node -> arduino-mcp-extension/bridge
+    path.resolve(__dirname, '..', '..', 'bridge', 'arduino-agent-bridge.js'),
+    // Bundled in a checkout: electron-app/lib/backend -> repo root
+    path.resolve(__dirname, '..', '..', '..', 'arduino-mcp-extension', 'bridge', 'arduino-agent-bridge.js'),
+  ];
+  return candidates.find((p): p is string => !!p && fs.existsSync(p)) ?? null;
+}
+
+/** The app executable (for ARDUINO_AGENT_PATH), or null when running from a dev Electron. */
+function findAppExecutable(): string | null {
+  return /^arduino[ -](agent|ide)(\.exe)?$/i.test(path.basename(process.execPath))
+    ? process.execPath
+    : null;
+}
 
 @injectable()
 export class MCPServiceImpl implements MCPService {
@@ -79,6 +111,58 @@ export class MCPServiceImpl implements MCPService {
     return this.mcpServer.buildClientConfig();
   }
 
+  async getConnectionGuide(): Promise<MCPConnectionGuide> {
+    const url = await this.getServerUrl();
+    const token = this.mcpServer.getAuthToken();
+    const bridgePath = findBridge();
+    const appExecutable = findAppExecutable();
+    const quote = (s: string) => `"${s}"`;
+    const snippets: MCPConnectionSnippet[] = [];
+
+    if (bridgePath) {
+      const env = appExecutable ? ` --env ARDUINO_AGENT_PATH=${quote(appExecutable)}` : '';
+      snippets.push({
+        id: 'claude-code',
+        title: 'Claude Code',
+        description:
+          'Run this in a terminal. It adds Arduino Agent to Claude Code for all your projects, ' +
+          'through the bundled bridge (needs Node.js 18 or newer).',
+        text: `claude mcp add arduino --scope user${env} -- node ${quote(bridgePath)}`,
+      });
+      const server: Record<string, unknown> = { command: 'node', args: [bridgePath] };
+      if (appExecutable) {
+        server.env = { ARDUINO_AGENT_PATH: appExecutable };
+      }
+      snippets.push({
+        id: 'bridge-config',
+        title: 'Claude Desktop, Cursor and other MCP clients',
+        description:
+          'Add this to the client\'s MCP configuration (claude_desktop_config.json, .mcp.json, ...). ' +
+          'The bundled bridge stays connected while Arduino Agent is closed and starts it when a ' +
+          'tool needs it. Needs Node.js 18 or newer.',
+        text: JSON.stringify({ mcpServers: { arduino: server } }, null, 2),
+      });
+    } else {
+      const header = token ? ` --header ${quote(`Authorization: Bearer ${token}`)}` : '';
+      snippets.push({
+        id: 'claude-code',
+        title: 'Claude Code',
+        description: 'Run this in a terminal. It connects while Arduino Agent is running.',
+        text: `claude mcp add arduino --scope user --transport http ${url}${header}`,
+      });
+    }
+    snippets.push({
+      id: 'http-config',
+      title: 'Direct HTTP',
+      description:
+        'For clients that speak Streamable HTTP. Only connects while Arduino Agent is running' +
+        (token ? '; the token is stored in ~/.arduinoIDE/mcp-token.' : '.'),
+      text: this.mcpServer.buildClientConfig(),
+    });
+
+    return { status: this.mcpServer.getStatus(), url, bridgePath, appExecutable, snippets };
+  }
+
   async healthCheck(): Promise<boolean> {
     return this.mcpServer.isServerRunning();
   }
@@ -97,6 +181,7 @@ export class MCPServiceImpl implements MCPService {
     this.mcpServer.setFileChangeCallback((event) =>
       this.notifyFileChanged(event)
     );
+    this.mcpServer.setSessionsChangedListener(() => this.notifyStatusChanged());
   }
 
   /**

@@ -18,6 +18,7 @@ import { bindMCPPreferences, MCPPreferences } from './mcp-preferences';
 import { MCPService, MCPServicePath } from '../common/mcp-service';
 import { MCPFrontendContribution } from './mcp-frontend-contribution';
 import { AgentAbout, DisabledIDEUpdateCheck, RemoveIDEUpdaterCommand } from './agent-branding';
+import { ConnectAgentContribution } from './connect-agent';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
   // Bind MCP preferences to add settings to the IDE preferences panel
@@ -39,6 +40,12 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
   // Bind frontend contribution to handle preference changes
   bind(MCPFrontendContribution).toSelf().inSingletonScope();
   bind(FrontendApplicationContribution).toService(MCPFrontendContribution);
+
+  // Help > Connect an AI Agent..., the MCP status bar item, first-run hint
+  bind(ConnectAgentContribution).toSelf().inSingletonScope();
+  bind(CommandContribution).toService(ConnectAgentContribution);
+  bind(MenuContribution).toService(ConnectAgentContribution);
+  bind(FrontendApplicationContribution).toService(ConnectAgentContribution);
 
   console.log('[arduino-mcp] Frontend module loaded with MCP preferences and service proxy');
 });

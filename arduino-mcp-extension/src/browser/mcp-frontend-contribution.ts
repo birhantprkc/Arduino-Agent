@@ -13,6 +13,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser/fronten
 import { FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 import { PreferenceService } from '@theia/core/lib/browser/preferences';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import URI from '@theia/core/lib/common/uri';
 import {
@@ -53,6 +54,10 @@ export class MCPFrontendContribution
   // Track recent file changes to avoid notification spam
   private recentFileChanges = new Map<string, number>();
   private readonly NOTIFICATION_DEBOUNCE_MS = 2000;
+
+  private readonly onDidChangeStatusEmitter = new Emitter<MCPStatus>();
+  /** Server status pushed by the backend (start/stop, sessions opening or closing). */
+  readonly onDidChangeStatus: Event<MCPStatus> = this.onDidChangeStatusEmitter.event;
 
   @postConstruct()
   protected init(): void {
@@ -198,6 +203,7 @@ export class MCPFrontendContribution
    */
   onStatusChanged(status: MCPStatus): void {
     console.log('[arduino-mcp] MCP status changed:', status);
+    this.onDidChangeStatusEmitter.fire(status);
   }
 
   // ============================================================
