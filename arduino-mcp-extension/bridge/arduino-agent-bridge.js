@@ -62,7 +62,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const PROTOCOL_VERSION = '2024-11-05';
-const BRIDGE_VERSION = '0.3.0';
+const BRIDGE_VERSION = '0.3.1';
 const ENDPOINT = process.env.ARDUINO_MCP_URL || 'http://127.0.0.1:3847/mcp';
 const ARDUINO_DIR = path.join(os.homedir(), '.arduinoIDE');
 const TOKEN_FILE = path.join(ARDUINO_DIR, 'mcp-token');
@@ -140,6 +140,25 @@ function warn(...args) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * ARDUINO_AGENT_PATH, following the 0.7.0 rename of the executable from
+ * `Arduino IDE` to `Arduino Agent` (`Arduino IDE.exe`, or on macOS
+ * `Arduino IDE.app/Contents/MacOS/Arduino IDE`). When a path written for an
+ * older release no longer exists but the renamed one does, use that, so
+ * existing MCP configs keep working after an upgrade.
+ */
+function resolveAgentExecutable(exe) {
+  if (!exe || fs.existsSync(exe) || !exe.includes('Arduino IDE')) return exe;
+  const candidates = [
+    path.join(path.dirname(exe), path.basename(exe).split('Arduino IDE').join('Arduino Agent')),
+    exe.split('Arduino IDE').join('Arduino Agent'),
+  ];
+  const renamed = candidates.find((p) => fs.existsSync(p));
+  if (!renamed) return exe;
+  warn(`ARDUINO_AGENT_PATH points at ${exe}, which no longer exists; using ${renamed} instead (the executable was renamed in Arduino Agent 0.7.0 - update the setting)`);
+  return renamed;
 }
 
 /** The message shown when a tool needs the IDE and it is not reachable. */
@@ -358,7 +377,7 @@ class Upstream {
   }
 
   async launchAndWaitOnce(onWaiting) {
-    const exe = process.env.ARDUINO_AGENT_PATH;
+    const exe = resolveAgentExecutable(process.env.ARDUINO_AGENT_PATH);
     if (this.launchGaveUp) {
       return {
         ok: false,

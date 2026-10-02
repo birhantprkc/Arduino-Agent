@@ -253,7 +253,7 @@ Expected response:
 ```json
 {
   "status": "ok",
-  "server": "arduino-ide-mcp",
+  "server": "arduino-agent",
   "version": "0.5.0",
   "uptime": 123,
   "auth": true

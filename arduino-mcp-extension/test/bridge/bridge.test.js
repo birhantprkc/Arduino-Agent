@@ -278,6 +278,36 @@ test('an IDE that never answers gives a clear error and is not started twice', a
   }
 });
 
+test('an ARDUINO_AGENT_PATH naming the pre-0.7.0 "Arduino IDE" executable finds the renamed one', async () => {
+  // A renamed node binary stands in for the renamed IDE executable.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'arduino-bridge-rename-'));
+  const ext = process.platform === 'win32' ? '.exe' : '';
+  const renamed = path.join(dir, `Arduino Agent${ext}`);
+  try {
+    fs.linkSync(process.execPath, renamed);
+  } catch {
+    fs.copyFileSync(process.execPath, renamed);
+  }
+  const port = await freePort();
+  const bridge = startBridge(port, {
+    ARDUINO_AGENT_PATH: path.join(dir, `Arduino IDE${ext}`),
+    ARDUINO_MCP_LAUNCH_TIMEOUT: '10',
+  });
+  let ide;
+  try {
+    await bridge.init();
+    const pending = bridge.request('tools/call', { name: 'execute_tool', arguments: { tool_name: 'arduino_context', params: {} } }, 15000);
+    await new Promise((r) => setTimeout(r, 1000));
+    ide = await fakeIde(port, { tools: [] });
+    const res = await pending;
+    assert.strictEqual(res.result.isError, undefined);
+    assert.strictEqual(textOf(res), 'ran execute_tool');
+  } finally {
+    bridge.close();
+    await ide?.close();
+  }
+});
+
 test('a wrong ARDUINO_AGENT_PATH is reported, not waited on', async () => {
   const bridge = startBridge(await freePort(), {
     ARDUINO_AGENT_PATH: path.join(os.tmpdir(), 'no-such-dir', 'Arduino IDE.exe'),

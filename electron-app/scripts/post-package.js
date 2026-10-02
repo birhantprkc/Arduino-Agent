@@ -131,7 +131,7 @@ async function copyFilesToBuildArtifacts() {
     case 'linux': {
       filesToCopy.push(
         ...glob
-          .sync('**/arduino-ide*.{zip,AppImage}', { cwd })
+          .sync('**/arduino-agent*.{zip,AppImage}', { cwd })
           .map((p) => path.join(cwd, p))
       );
       break;
@@ -139,7 +139,7 @@ async function copyFilesToBuildArtifacts() {
     case 'win32': {
       filesToCopy.push(
         ...glob
-          .sync('**/arduino-ide*.{exe,msi,zip}', { cwd })
+          .sync('**/arduino-agent*.{exe,msi,zip}', { cwd })
           .map((p) => path.join(cwd, p))
       );
       break;
@@ -147,7 +147,7 @@ async function copyFilesToBuildArtifacts() {
     case 'darwin': {
       filesToCopy.push(
         ...glob
-          .sync('**/arduino-ide*.{dmg,zip}', { cwd })
+          .sync('**/arduino-agent*.{dmg,zip}', { cwd })
           .map((p) => path.join(cwd, p))
       );
       break;
