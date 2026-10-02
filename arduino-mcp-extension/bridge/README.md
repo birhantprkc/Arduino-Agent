@@ -30,7 +30,7 @@ is closed:
     "arduino": {
       "command": "node",
       "args": ["/path/to/mcp-bridge/bridge/arduino-agent-bridge.js"],
-      "env": { "ARDUINO_AGENT_PATH": "/path/to/Arduino IDE executable" }
+      "env": { "ARDUINO_AGENT_PATH": "/path/to/Arduino Agent executable" }
     }
   }
 }
@@ -41,7 +41,7 @@ Where to find it:
 | Running from | Bridge path |
 |--------------|-------------|
 | Release, Windows / Linux | `<unzipped folder>/resources/mcp-bridge/bridge/arduino-agent-bridge.js` |
-| Release, macOS | `Arduino IDE.app/Contents/Resources/mcp-bridge/bridge/arduino-agent-bridge.js` |
+| Release, macOS | `Arduino Agent.app/Contents/Resources/mcp-bridge/bridge/arduino-agent-bridge.js` (`Arduino IDE.app` in 0.6.2) |
 | Source checkout | `arduino-mcp-extension/bridge/arduino-agent-bridge.js`, after `yarn build` in `arduino-mcp-extension` |
 
 Releases after v0.6.1 include the bridge; earlier zips don't, so use a checkout
@@ -60,7 +60,7 @@ All optional, set as environment variables:
 |----------|---------|---------|
 | `ARDUINO_MCP_URL` | `http://127.0.0.1:3847/mcp` | MCP endpoint to forward to |
 | `ARDUINO_MCP_TOKEN` | *(reads the token file)* | Override the auth token |
-| `ARDUINO_AGENT_PATH` | *(unset — never launches)* | Path to the IDE executable. When set, a tool call that needs the IDE while it is closed starts it, waits for its MCP server and then runs the call. Concurrent calls share one launch; if the IDE never answers, the bridge doesn't start it again until it has been seen running. |
+| `ARDUINO_AGENT_PATH` | *(unset — never launches)* | Path to the IDE executable. When set, a tool call that needs the IDE while it is closed starts it, waits for its MCP server and then runs the call. Concurrent calls share one launch; if the IDE never answers, the bridge doesn't start it again until it has been seen running. A path written for a pre-0.7.0 release (`Arduino IDE.exe`, `Arduino IDE.app/...`) that no longer exists falls back to the renamed `Arduino Agent` executable. |
 | `ARDUINO_MCP_LAUNCH_TIMEOUT` | `120` | Seconds to wait for a started IDE's MCP server |
 | `ARDUINO_MCP_WATCH_INTERVAL` | `5` | Seconds between checks for the IDE coming up (a local TCP connect) |
 | `ARDUINO_MCP_DEBUG` | *(off)* | Set to `1` for verbose logging on stderr |
@@ -72,8 +72,8 @@ Example on Windows:
   "mcpServers": {
     "arduino": {
       "command": "node",
-      "args": ["C:/Arduino/resources/mcp-bridge/bridge/arduino-agent-bridge.js"],
-      "env": { "ARDUINO_AGENT_PATH": "C:/Arduino/Arduino IDE.exe" }
+      "args": ["C:/Arduino Agent/resources/mcp-bridge/bridge/arduino-agent-bridge.js"],
+      "env": { "ARDUINO_AGENT_PATH": "C:/Arduino Agent/Arduino Agent.exe" }
     }
   }
 }

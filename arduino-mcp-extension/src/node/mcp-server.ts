@@ -666,7 +666,7 @@ export class ArduinoMCPServer {
       res.end(
         JSON.stringify({
           status: 'ok',
-          server: 'arduino-ide-mcp',
+          server: 'arduino-agent',
           version: EXTENSION_VERSION,
           uptime: Math.floor((Date.now() - this.startTime) / 1000),
           auth: this.requireAuth,
@@ -802,7 +802,7 @@ export class ArduinoMCPServer {
    */
   private createMCPServerInstance(): Server {
     const server = new Server(
-      { name: 'arduino-ide-mcp', version: EXTENSION_VERSION },
+      { name: 'arduino-agent', version: EXTENSION_VERSION },
       {
         capabilities: { tools: {}, prompts: {} },
         // Workflow guidance delivered to every client at initialize.

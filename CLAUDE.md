@@ -30,8 +30,8 @@ classes are `any` in our extension: no `override`, no inherited fields.
 ## Fast backend-only iteration (Windows dev box)
 
 The MCP extension is bundled into `electron-app/lib/backend/main.js`. To test
-a backend change against the installed app at `C:\Arduino` without full
-packaging:
+a backend change against an installed app (`<install>` below, the unzipped
+release folder) without full packaging:
 
 1. `npm run --prefix arduino-mcp-extension build`
 2. In `electron-app/`: `node ../node_modules/@theia/cli/bin/theia build
@@ -39,8 +39,9 @@ packaging:
    file — piping through tail/grep has repeatedly swallowed the real error).
    If it dies with ENOTEMPTY on `lib/backend/native-webpack-plugin`, delete
    that directory and rerun (transient Windows file-lock race).
-3. Kill "Arduino IDE" processes, copy `electron-app/lib/backend/main.js` over
-   `C:\Arduino\resources\app\lib\backend\main.js`, relaunch.
+3. Kill "Arduino Agent" processes ("Arduino IDE" before 0.7.0), copy
+   `electron-app/lib/backend/main.js` over
+   `<install>\resources\app\lib\backend\main.js`, relaunch.
 4. Confirm the copy landed by grepping the installed main.js for a distinctive
    new string, and check `/health` uptime is small (a stale uptime means the
    old process survived the kill).

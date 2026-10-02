@@ -164,13 +164,15 @@ jobs:
         # scripts/package.js, but with Arduino Agent's version: it is the version
         # in the window title and About dialog, and buildDate is what makes the
         # app load its bundled VS Code plugins (arduino-ide-electron-main.js).
+        # The name gives the app its own userData folder (and single-instance
+        # lock), separate from the official Arduino IDE's `arduino-ide`.
         shell: bash
         run: |
           version=$(node -p "require('../arduino-mcp-extension/package.json').version")
           cli_version=$(node -p "require('../arduino-ide-extension/package.json').arduino['arduino-cli'].version")
           node ../node_modules/electron-builder/cli.js --dir --publish never \
             -c.electronVersion=30.1.2 \
-            -c.extraMetadata.name=arduino-ide \
+            -c.extraMetadata.name=arduino-agent \
             -c.extraMetadata.main=./arduino-ide-electron-main.js \
             -c.extraMetadata.version="$version" \
             -c.extraMetadata.theia.frontend.config.appVersion="$version" \
@@ -183,7 +185,9 @@ jobs:
         run: |
           $src = Get-ChildItem -Directory electron-app/dist |
             Where-Object { $_.Name -like '*-unpacked' } | Select-Object -First 1
-          Compress-Archive -Path "$($src.FullName)/*" -DestinationPath "arduino-ide-mcp-${{ matrix.platform }}.zip"
+          Compress-Archive -Path "$($src.FullName)/*" -DestinationPath "arduino-agent-${{ matrix.platform }}.zip"
+          # Pre-0.7.0 asset name, kept so existing download links keep working.
+          Copy-Item "arduino-agent-${{ matrix.platform }}.zip" "arduino-ide-mcp-${{ matrix.platform }}.zip"
 
       - name: Zip artifact (Linux/macOS)
         if: runner.os != 'Windows'
@@ -193,7 +197,9 @@ jobs:
           src=$(ls -d electron-app/dist/*-unpacked 2>/dev/null | head -1 || true)
           if [ -z "$src" ]; then src=$(ls -d electron-app/dist/mac* 2>/dev/null | head -1); fi
           if [ -z "$src" ]; then echo "No build output found under electron-app/dist"; ls -la electron-app/dist; exit 1; fi
-          ( cd "$src" && zip -ry "$GITHUB_WORKSPACE/arduino-ide-mcp-${{ matrix.platform }}.zip" . )
+          ( cd "$src" && zip -ry "$GITHUB_WORKSPACE/arduino-agent-${{ matrix.platform }}.zip" . )
+          # Pre-0.7.0 asset name, kept so existing download links keep working.
+          cp "arduino-agent-${{ matrix.platform }}.zip" "arduino-ide-mcp-${{ matrix.platform }}.zip"
 
       - name: Upload to draft release
         uses: softprops/action-gh-release@v2
@@ -207,10 +213,12 @@ jobs:
             Not affiliated with or endorsed by Arduino SA.
 
             Each archive contains the unpacked application for its platform - unzip and run
-            `Arduino IDE` (`Arduino IDE.exe` on Windows). The MCP server starts on
+            `Arduino Agent` (`Arduino Agent.exe` on Windows). The MCP server starts on
             `http://127.0.0.1:3847`; the connection config (with the auth token) is printed
             to the IDE console on launch.
 
             Artifacts are unsigned; on macOS you may need to allow the app in
             System Settings > Privacy & Security.
-          files: arduino-ide-mcp-${{ matrix.platform }}.zip
+          files: |
+            arduino-agent-${{ matrix.platform }}.zip
+            arduino-ide-mcp-${{ matrix.platform }}.zip

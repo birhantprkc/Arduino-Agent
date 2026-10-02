@@ -63,12 +63,20 @@ To produce an installable app (unpacked, unsigned):
 
 ```bash
 cd electron-app
+# Rebuild native modules against Electron's ABI. This must come BEFORE the
+# production build, which bundles whatever pty.node is present (see CLAUDE.md).
+yarn exec theia rebuild:electron
 # Production bundle (bundled backend + minified frontend)
 yarn exec theia build --config webpack.config.js --mode production
-# Rebuild native modules against Electron's ABI
-yarn exec theia rebuild:electron
-# Package to electron-app/dist/win-unpacked
-yarn exec electron-builder --dir --publish never
+# Package to electron-app/dist/win-unpacked. Use bash (PowerShell mis-tokenizes
+# -c.extraMetadata.main). The metadata matches the "Package (unpacked)" step in
+# .github/workflows/release.yml; without `name` and `main` the app gets the
+# wrong user-data folder and skips its bundled plugins.
+node ../node_modules/electron-builder/cli.js --dir --publish never \
+  -c.electronVersion=30.1.2 \
+  -c.extraMetadata.name=arduino-agent \
+  -c.extraMetadata.main=./arduino-ide-electron-main.js \
+  -c.extraMetadata.theia.frontend.config.buildDate="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 The MCP server starts automatically at `http://127.0.0.1:3847` when the IDE

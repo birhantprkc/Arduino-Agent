@@ -39,20 +39,26 @@ making the IDE a first-class participant in the conversation:
 
 Unsigned development builds of the **[latest release](https://github.com/mixelpixx/Arduino-Agent/releases/latest)** — these links always point at the newest version:
 
-- [**Windows x64**](https://github.com/mixelpixx/Arduino-Agent/releases/latest/download/arduino-ide-mcp-windows.zip)
-- [**macOS**](https://github.com/mixelpixx/Arduino-Agent/releases/latest/download/arduino-ide-mcp-macos.zip)
-- [**Linux x64**](https://github.com/mixelpixx/Arduino-Agent/releases/latest/download/arduino-ide-mcp-linux.zip)
+- [**Windows x64**](https://github.com/mixelpixx/Arduino-Agent/releases/latest/download/arduino-agent-windows.zip)
+- [**macOS**](https://github.com/mixelpixx/Arduino-Agent/releases/latest/download/arduino-agent-macos.zip)
+- [**Linux x64**](https://github.com/mixelpixx/Arduino-Agent/releases/latest/download/arduino-agent-linux.zip)
 
-Unzip and run `Arduino IDE` (`Arduino IDE.exe` on Windows). The window, About
-box and icon say **Arduino Agent**; only the executable keeps upstream's name for
-now. Arduino Agent doesn't check Arduino's update server; get new versions here.
-Release notes and older builds are on the
-[Releases](https://github.com/mixelpixx/Arduino-Agent/releases) page.
+Unzip and run **Arduino Agent** (`Arduino Agent.exe` on Windows,
+`Arduino Agent.app` on macOS, `arduino-agent` on Linux). Arduino Agent doesn't
+check Arduino's update server; get new versions here. Release notes and older
+builds are on the [Releases](https://github.com/mixelpixx/Arduino-Agent/releases)
+page.
 
-> **Have the official Arduino IDE installed too?** Both currently share settings
-> and a single-instance lock, so starting one while the other is running hands
-> off to the one already open. Close one before starting the other. Separating
-> them properly is planned for v0.7.0.
+> **Got the official Arduino IDE too?** They run side by side as separate apps.
+> They share what should be shared, your sketchbook, installed boards and
+> libraries, and preferences (`~/.arduinoIDE`), but each keeps its own window
+> state and opens independently.
+>
+> **Upgrading from 0.6.x?** The executable was called `Arduino IDE` before 0.7.0.
+> Your window layout and per-sketch board selections carry over on first launch,
+> and an MCP config whose `ARDUINO_AGENT_PATH` still names `Arduino IDE.exe`
+> keeps working (the bridge finds the renamed executable), but update it when
+> convenient.
 
 > These are unsigned dev builds. On macOS you may need to allow the app under
 > **System Settings → Privacy & Security**; on Windows, dismiss SmartScreen with
@@ -100,7 +106,8 @@ Release notes and older builds are on the
    >
    > Releases after v0.6.1 ship the bridge inside the app: `<install>` is the
    > unzipped folder on Windows/Linux; on macOS the path is
-   > `Arduino IDE.app/Contents/Resources/mcp-bridge/bridge/arduino-agent-bridge.js`.
+   > `Arduino Agent.app/Contents/Resources/mcp-bridge/bridge/arduino-agent-bridge.js`
+   > (`Arduino IDE.app` in 0.6.2).
    > From a source checkout, use `arduino-mcp-extension/bridge/arduino-agent-bridge.js`
    > after building the extension. It needs no token configuration (it reads
    > `~/.arduinoIDE/mcp-token` itself) and no dependencies. See
