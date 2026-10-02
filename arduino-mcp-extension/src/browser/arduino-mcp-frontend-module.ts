@@ -10,15 +10,18 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { MenuContribution } from '@theia/core/lib/common/menu';
 import { About } from 'arduino-ide-extension/lib/browser/contributions/about';
 import { CheckForIDEUpdates } from 'arduino-ide-extension/lib/browser/contributions/check-for-ide-updates';
+import { MonacoThemingService } from 'arduino-ide-extension/lib/browser/theia/monaco/monaco-theming-service';
 import { bindMCPPreferences, MCPPreferences } from './mcp-preferences';
 import { MCPService, MCPServicePath } from '../common/mcp-service';
 import { MCPFrontendContribution } from './mcp-frontend-contribution';
 import { AgentAbout, DisabledIDEUpdateCheck, RemoveIDEUpdaterCommand } from './agent-branding';
 import { ConnectAgentContribution } from './connect-agent';
+import { AgentMonacoThemingService, AgentThemeStyles } from './agent-theme';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
   // Bind MCP preferences to add settings to the IDE preferences panel
@@ -30,6 +33,12 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
   bind(RemoveIDEUpdaterCommand).toSelf().inSingletonScope();
   bind(CommandContribution).toService(RemoveIDEUpdaterCommand);
   bind(MenuContribution).toService(RemoveIDEUpdaterCommand);
+
+  // Arduino Agent colors: Arduino's themes recolored teal -> indigo (agent-theme.ts)
+  rebind(MonacoThemingService).to(AgentMonacoThemingService).inSingletonScope();
+  bind(AgentThemeStyles).toSelf().inSingletonScope();
+  bind(FrontendApplicationContribution).toService(AgentThemeStyles);
+  bind(ColorContribution).toService(AgentThemeStyles);
 
   // Bind the MCP service proxy to communicate with backend
   bind(MCPService).toDynamicValue(ctx => {
